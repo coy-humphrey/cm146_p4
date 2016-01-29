@@ -10,7 +10,11 @@
 // starting point, or you can throw it out entirely and replace it with your
 // own.
 """
-import logging, sys, traceback
+import logging, traceback, sys, os, inspect
+logging.basicConfig(filename=__file__[:-3] +'.log', filemode='w', level=logging.DEBUG)
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 
 from behavior_tree_bot.behaviors import *
 from behavior_tree_bot.checks import *

@@ -1,5 +1,5 @@
 import subprocess
-import os
+import os, sys
 
 
 def show_match(bot, opponent_bot, map_num):
@@ -52,6 +52,7 @@ def test(bot, opponent_bot, map):
 
 
 if __name__ == '__main__':
+    path =  os.getcwd()
     opponents = ['opponent_bots/easy_bot.py',
                  'opponent_bots/spread_bot.py',
                  'opponent_bots/aggressive_bot.py',
@@ -63,5 +64,9 @@ if __name__ == '__main__':
     my_bot = 'behavior_tree_bot/bt_bot.py'
 
     for opponent, map in zip(opponents, maps):
-        #show_match(opponent, my_bot, map) #my_bot, opponent, map)  # use this command if you want to observe the bots
-        test(my_bot, opponent, map)  # use this command if you just want the results of the matches reported
+        # use this command if you want to observe the bots
+        show_match(my_bot, opponent, map)
+
+        # use this command if you just want the results of the matches reported
+        #test(my_bot, opponent, map)  
+

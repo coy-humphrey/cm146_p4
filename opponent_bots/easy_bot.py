@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 #
-
+import logging, traceback, sys, os, inspect
+logging.basicConfig(filename=__file__[:-3] +'.log', filemode='w', level=logging.DEBUG)
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 
 from planet_wars import PlanetWars, issue_order, finish_turn
-import logging, sys, traceback
 
 
 def do_turn(state):

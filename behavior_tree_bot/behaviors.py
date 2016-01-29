@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '../')
 from planet_wars import issue_order
 
 
