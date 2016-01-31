@@ -39,3 +39,45 @@ def spread_to_weakest_neutral_planet(state):
     else:
         # (4) Send half the ships from my strongest planet to the weakest enemy planet.
         return issue_order(state, strongest_planet.ID, weakest_planet.ID, strongest_planet.num_ships / 2)
+		
+def turtle(state):
+	planets = sort(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
+	fleet_distribution = {}
+	min_turns = 9999
+	max_turns = 0
+	
+	for fleet in state.enemy_fleets():
+		if fleet.destination_planet in planets:
+			fleet_distribution[fleet.destination_planet]['enemies'] += fleet.num_ships
+			min_turns = min(min_turns, fleet.turns_remaining)
+
+			
+	for fleet in state.my_fleets():
+		if fleet.turns_remaining > min_turns:
+			continue
+			
+		if fleet.destination_planet in planets:
+			fleet_distribution[fleet.destination_planet]['allies'] += fleet.num_ships
+			
+	elligable_planets = [planet for planet in smallest_first(state) if not under_attack(planet, fleet_distribution)]
+	
+	for planet in elligable_planets:
+		for plnet in planets:
+			if under_attack(plnet, fleet_distribution):
+				ships = planet.num_ships
+				danger_level = fleet_distribution[plnet]['enemies'] - fleet_distribution[plnet]['allies']
+				reenforcements = min(ships, danger_level)
+				
+				reenforcements = max(reenforcements, 0)
+				
+				if reenforcements > 0:
+					return issue_order(state, planet.ID, plnet.ID, reenforcements)
+	return True
+	
+def smallest_first(state):
+	return sort(state.my_planets(), key = lambda p: p.growth_rate)
+	
+def under_attack(planet, fleet_distribution):
+	if planet in fleet_distribution:
+		return fleet_distribution[planet]['enemies'] != 0
+	return False
