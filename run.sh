@@ -11,7 +11,7 @@ maps=(71 13 24 56 7)
 my_python="python3.5"
 my_bot="behavior_tree_bot/bt_bot.py"
 
-show_game=true
+show_game=false
 
 for i in `seq 0 ${#opponents[@]}`;
 do
