@@ -41,7 +41,7 @@ def setup_behavior_tree():
     offensive_plan = Sequence(name='Offensive Strategy')
     offensive_plan.child_nodes = [snipeAction, attack]
 
-    root.child_nodes = [offensive_plan]
+    root.child_nodes = [offensive_plan, attack]
 
     logging.info('\n' + root.tree_to_string())
     return root

@@ -58,11 +58,11 @@ def attack_largest_enemies (state):
 			if not under_attack(state, planet):
 				ships = planet.num_ships
 				if ships < 50: continue
-				danger_level = fleet_distribution[target]['danger_level'] + target.num_ships + target.growth_rate * 5
+				danger_level = fleet_distribution[target.ID]['danger_level'] + target.num_ships + target.growth_rate * state.distance(target.ID, planet.ID) + 1
 				reenforcements = min (ships, danger_level)
 				if reenforcements > 0:
 					issue_order(state, planet.ID, target.ID, reenforcements)
-					fleet_distribution[target]['danger_level'] -= reenforcements
+					fleet_distribution[target.ID]['danger_level'] -= reenforcements
 	return True
 
 def turtle(state):

@@ -11,9 +11,11 @@ maps=(71 13 24 56 7)
 my_python="python3.5"
 my_bot="behavior_tree_bot/bt_bot.py"
 
-show_game=false
+len=$((${#opponents[@]}-1))
 
-for i in `seq 0 ${#opponents[@]}`;
+show_game=true
+
+for i in `seq 0 $len`;
 do
 	map="maps/map"
 	map=$map${maps[$i]}".txt"
