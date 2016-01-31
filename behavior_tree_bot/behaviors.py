@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, '../')
 from planet_wars import issue_order
+from collections import defaultdict
 
 
 def attack_weakest_enemy_planet(state):
@@ -41,14 +42,14 @@ def spread_to_weakest_neutral_planet(state):
         return issue_order(state, strongest_planet.ID, weakest_planet.ID, strongest_planet.num_ships / 2)
 		
 def turtle(state):
-	planets = sort(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
-	fleet_distribution = {}
+	planets = sorted(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
+	fleet_distribution = defaultdict(int)
 	min_turns = 9999
 	max_turns = 0
 	
 	for fleet in state.enemy_fleets():
 		if fleet.destination_planet in planets:
-			fleet_distribution[fleet.destination_planet]['enemies'] += fleet.num_ships
+			fleet_distribution[fleet.destination_planet] += fleet.num_ships
 			min_turns = min(min_turns, fleet.turns_remaining)
 
 			
@@ -57,7 +58,7 @@ def turtle(state):
 			continue
 			
 		if fleet.destination_planet in planets:
-			fleet_distribution[fleet.destination_planet]['allies'] += fleet.num_ships
+			fleet_distribution[fleet.destination_planet] -= fleet.num_ships
 			
 	elligable_planets = [planet for planet in smallest_first(state) if not under_attack(planet, fleet_distribution)]
 	
@@ -65,19 +66,19 @@ def turtle(state):
 		for plnet in planets:
 			if under_attack(plnet, fleet_distribution):
 				ships = planet.num_ships
-				danger_level = fleet_distribution[plnet]['enemies'] - fleet_distribution[plnet]['allies']
+				danger_level = fleet_distribution[plnet]
 				reenforcements = min(ships, danger_level)
 				
 				reenforcements = max(reenforcements, 0)
 				
 				if reenforcements > 0:
-					return issue_order(state, planet.ID, plnet.ID, reenforcements)
+					issue_order(state, planet.ID, plnet.ID, reenforcements)
 	return True
 	
 def smallest_first(state):
-	return sort(state.my_planets(), key = lambda p: p.growth_rate)
+	return sorted(state.my_planets(), key = lambda p: p.growth_rate)
 	
 def under_attack(planet, fleet_distribution):
 	if planet in fleet_distribution:
-		return fleet_distribution[planet]['enemies'] != 0
+		return fleet_distribution[planet] > 0
 	return False
