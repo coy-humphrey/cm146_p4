@@ -51,6 +51,7 @@ def setup_behavior_tree():
     winning = Check(significant_lead)
     all_out_offense.child_nodes = [winning, attack.copy()]
     defensive_offense.child_nodes = [all_out_offense, attackLargest]
+   
     defensive_plan.child_nodes = [should_play_defensive, snipe_if_possible, turtleAction, enemyHasPlanet, defensive_offense]
 
     offensive_plan = Sequence(name='Offensive Strategy')

@@ -89,7 +89,7 @@ def attack_largest_enemy (state):
 
 
 def turtle(state):
-    planets = sorted(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
+    planets = [planet for planet in state.my_planets() if under_attack(state, planet)]
     danger = defaultdict(int)
     
     for fleet in state.enemy_fleets():
@@ -101,16 +101,14 @@ def turtle(state):
             danger[fleet.destination_planet] -= fleet.num_ships
             
     elligable_planets = [planet for planet in smallest_first(state) if not under_attack(state, planet)]
-    
     for planet in elligable_planets:
-        for plnet in planets:
-            if under_attack(state, plnet):
-                ships = planet.num_ships
-                danger_level = danger[plnet.ID] + plnet.growth_rate
-                reenforcements = min(ships, danger_level)
-                if reenforcements > 0:
-                    issue_order(state, planet.ID, plnet.ID, reenforcements)
-                    danger[plnet.ID] -= reenforcements
+        for plnet in sorted (planets, key=lambda p: p.growth_rate - state.distance (p.ID, planet.ID)):
+            ships = planet.num_ships
+            danger_level = danger[plnet.ID] + plnet.growth_rate
+            reenforcements = min(ships, danger_level)
+            if reenforcements > 0:
+                issue_order(state, planet.ID, plnet.ID, reenforcements)
+                danger[plnet.ID] -= reenforcements
 
     return True
 
@@ -152,9 +150,23 @@ def spread_to_large_close_planets (state):
         for target in planet_targets:
             ships = planet.num_ships
             danger_level = target.num_ships + 1
-            reenforcements = min (ships, danger_level)
-            if reenforcements > 0:
+            if ships > danger_level and danger_level > 0:
                 issue_order(state, planet.ID, target.ID, danger_level)
+    return True
+
+def spread_to_closest (state):
+    for planet in sorted (state.my_planets(), key = lambda p: p.num_ships, reverse=True):
+        if under_attack (state, planet) or planet.num_ships < 50: continue
+        planet_targets = sorted (state.neutral_planets(), key = lambda p:state.distance(planet.ID, p.ID), reverse = True)
+        for target in planet_targets:
+            danger = 0
+            for fleet in state.my_fleets():
+                if fleet.destination_planet == target.ID:
+                    danger -= fleet.num_ships
+            ships = planet.num_ships
+            danger_level = danger + target.num_ships + 1
+            if ships > danger_level and danger_level > 0:
+                return issue_order(state, planet.ID, target.ID, danger_level)
     return True
 
 def attack_largest_enemies (state):
