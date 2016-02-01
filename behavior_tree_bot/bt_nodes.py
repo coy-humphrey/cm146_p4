@@ -66,7 +66,6 @@ class Sequence(Composite):
         else:  # for loop completed without failure; return success
             return True
 
-
 ############################### Leaf Nodes ##################################
 class Check(Node):
     def __init__(self, check_function):

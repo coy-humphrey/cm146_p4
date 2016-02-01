@@ -45,89 +45,144 @@ def spread_to_largest_neutral_planet(state):
         return issue_order(state, strongest_planet.ID, weakest_planet.ID, strongest_planet.num_ships / 2)
 
 def attack_largest_enemies (state):
-	targets = sorted(state.enemy_planets(), key = lambda p: p.growth_rate, reverse = True)
-	fleet_distribution = defaultdict(lambda: defaultdict(int))
-	for fleet in state.enemy_fleets():
-		if fleet.destination_planet in targets:
-			fleet_distribution[fleet.destination_planet]['danger_level'] += fleet.num_ships
-	for fleet in state.my_fleets():
-		if fleet.destination_planet in targets:
-			fleet_distribution[fleet.destination_planet]['danger_level'] -= fleet.num_ships
-	for target in targets:
-		for planet in smallest_first(state):
-			if not under_attack(state, planet):
-				ships = planet.num_ships
-				if ships < 50: continue
-				danger_level = fleet_distribution[target.ID]['danger_level'] + target.num_ships + target.growth_rate * state.distance(target.ID, planet.ID) + 1
-				reenforcements = min (ships, danger_level)
-				if reenforcements > 0:
-					issue_order(state, planet.ID, target.ID, reenforcements)
-					fleet_distribution[target.ID]['danger_level'] -= reenforcements
-	return True
+    targets = sorted(state.enemy_planets(), key = lambda p: p.growth_rate, reverse = True)
+    fleet_distribution = defaultdict(lambda: defaultdict(int))
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet in targets:
+            fleet_distribution[fleet.destination_planet]['danger_level'] += fleet.num_ships
+    for fleet in state.my_fleets():
+        if fleet.destination_planet in targets:
+            fleet_distribution[fleet.destination_planet]['danger_level'] -= fleet.num_ships
+    for target in targets:
+        for planet in smallest_first(state):
+            if not under_attack(state, planet):
+                ships = planet.num_ships
+                if ships < 50: continue
+                danger_level = fleet_distribution[target.ID]['danger_level'] + target.num_ships + target.growth_rate * state.distance(target.ID, planet.ID) + 1
+                reenforcements = min (ships, danger_level)
+                if reenforcements > 0:
+                    issue_order(state, planet.ID, target.ID, reenforcements)
+                    fleet_distribution[target.ID]['danger_level'] -= reenforcements
+    return True
+
+def attack_largest_enemy (state):
+    target = max (state.enemy_planets(), key = lambda p: p.growth_rate)
+    danger = target.num_ships
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet == target.ID:
+            danger += fleet.num_ships
+            
+    for fleet in state.my_fleets(): 
+        if fleet.destination_planet == target.ID:
+            danger -= fleet.num_ships
+
+    for planet in smallest_first(state):
+        if not under_attack(state, planet):
+            ships = planet.num_ships
+            if ships < 50: continue
+            danger_level = danger + target.growth_rate * 10
+            reenforcements = min (ships, danger_level)
+            if reenforcements > 0:
+                issue_order(state, planet.ID, target.ID, reenforcements)
+                danger -= reenforcements
+    return True
+
 
 def turtle(state):
-	planets = sorted(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
-	fleet_distribution = defaultdict(lambda : defaultdict(int))
-	
-	for fleet in state.enemy_fleets():
-		if fleet.destination_planet in planets:
-			fleet_distribution[fleet.destination_planet]['danger_level'] += fleet.num_ships
-			fleet_distribution[fleet.destination_planet]['min_turns'] = min(fleet_distribution[fleet.destination_planet]['min_turns'], fleet.turns_remaining)
-			
-	for fleet in state.my_fleets():	
-		if fleet.destination_planet in planets and fleet.turns_remaining <= fleet_distribution[fleet.destination_planet]['min_turns']:
-			fleet_distribution[fleet.destination_planet] -= fleet.num_ships
-			
-	elligable_planets = [planet for planet in smallest_first(state) if not under_attack(state, planet)]
-	
-	for planet in elligable_planets:
-		for plnet in planets:
-			if under_attack(state, plnet):
-				ships = planet.num_ships
-				danger_level = fleet_distribution[plnet]['danger_level']
-				reenforcements = min(ships, fleet_distribution[plnet]['danger_level'] + plnet.growth_rate)
-				if reenforcements > 0:
-					issue_order(state, planet.ID, plnet.ID, reenforcements)
-					fleet_distribution[target]['danger_level'] -= reenforcements
+    planets = sorted(state.my_planets(), key = lambda p: p.growth_rate, reverse = True) #get and sort our list of planets
+    danger = defaultdict(int)
+    
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet in planets:
+            danger[fleet.destination_planet] += fleet.num_ships
+            
+    for fleet in state.my_fleets(): 
+        if fleet.destination_planet in planets and fleet.turns_remaining <= fleet_distribution[fleet.destination_planet]['min_turns']:
+            danger[fleet.destination_planet] -= fleet.num_ships
+            
+    elligable_planets = [planet for planet in smallest_first(state) if not under_attack(state, planet)]
+    
+    for planet in elligable_planets:
+        for plnet in planets:
+            if under_attack(state, plnet):
+                ships = planet.num_ships
+                danger_level = danger[plnet.ID] + plnet.growth_rate
+                reenforcements = min(ships, danger_level)
+                if reenforcements > 0:
+                    issue_order(state, planet.ID, plnet.ID, reenforcements)
+                    danger[plnet.ID] -= reenforcements
 
-	return True
+    return True
 
 def snipe(state):
-	targets = sorted(state.neutral_planets(), key = lambda p: p.growth_rate, reverse = True)
-	danger = defaultdict(int)
-	min_turns = defaultdict(lambda: inf)
-	for fleet in state.enemy_fleets():
-		if fleet.destination_planet in [target.ID for target in targets]:
-			danger[fleet.destination_planet] += fleet.num_ships
-			min_turns[fleet.destination_planet] = min(min_turns[fleet.destination_planet], fleet.turns_remaining)
-	for fleet in state.my_fleets():
-		if fleet.destination_planet in [target.ID for target in targets]:
-			danger[fleet.destination_planet] -= fleet.num_ships
-	valid_targets = [target for target in targets if under_attack(state, target)]
-	if not valid_targets:
-		logging.log (logging.DEBUG, "Snipe: No valid targets")
-		return False
-	else:
-		logging.log(logging.DEBUG, 'yes valid targets')
-	for target in valid_targets:
-		logging.log(logging.DEBUG, 'target~')
-		for planet in smallest_first(state):
-			logging.log(logging.DEBUG, 'planet~ : {} {}'.format(state.distance (planet.ID, target.ID), min_turns[target.ID]))
-			if state.distance (planet.ID, target.ID) == min_turns[target.ID] + 1:
-				logging.log(logging.DEBUG, 'sending_fleet: {} {}'.format(state.distance(planet.ID, target.ID), min_turns[target.ID]))
-				ships = planet.num_ships
-				danger_level = danger[target.ID] + target.growth_rate
-				reenforcements = min (ships, danger_level)
-				issue_order(state, planet.ID, target.ID, reenforcements)
-				danger[target.ID] -= reenforcements
-	return True
+    targets = sorted(state.neutral_planets(), key = lambda p: p.growth_rate, reverse = True)
+    danger = defaultdict(int)
+    min_turns = defaultdict(lambda: inf)
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet in [target.ID for target in targets]:
+            danger[fleet.destination_planet] += fleet.num_ships
+            min_turns[fleet.destination_planet] = min(min_turns[fleet.destination_planet], fleet.turns_remaining)
+    for fleet in state.my_fleets():
+        if fleet.destination_planet in [target.ID for target in targets]:
+            danger[fleet.destination_planet] -= fleet.num_ships
+    valid_targets = [target for target in targets if under_attack(state, target)]
+    if not valid_targets:
+        logging.log (logging.DEBUG, "Snipe: No valid targets")
+        return False
+    else:
+        logging.log(logging.DEBUG, 'yes valid targets')
+    for target in valid_targets:
+        logging.log(logging.DEBUG, 'target~')
+        for planet in smallest_first(state):
+            logging.log(logging.DEBUG, 'planet~ : {} {}'.format(state.distance (planet.ID, target.ID), min_turns[target.ID]))
+            if state.distance (planet.ID, target.ID) == min_turns[target.ID] + 1:
+                logging.log(logging.DEBUG, 'sending_fleet: {} {}'.format(state.distance(planet.ID, target.ID), min_turns[target.ID]))
+                ships = planet.num_ships
+                danger_level = danger[target.ID] + target.growth_rate
+                reenforcements = min (ships, danger_level)
+                if reenforcements > 0:
+                    issue_order(state, planet.ID, target.ID, reenforcements)
+                    danger[target.ID] -= reenforcements
+    return True
 
+def spread_to_large_close_planets (state):
+    for planet in smallest_first(state):
+        if under_attack (state, planet) or planet.num_ships < 50: continue
+        planet_targets = sorted (state.neutral_planets(), key = lambda p: p.growth_rate - state.distance(planet.ID, p.ID), reverse = True)
+        for target in planet_targets:
+            ships = planet.num_ships
+            danger_level = target.num_ships + 1
+            reenforcements = min (ships, danger_level)
+            if reenforcements > 0:
+                issue_order(state, planet.ID, target.ID, danger_level)
+    return True
+
+def attack_largest_enemies (state):
+    targets = sorted(state.enemy_planets(), key = lambda p: p.growth_rate, reverse = True)
+    fleet_distribution = defaultdict(lambda: defaultdict(int))
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet in targets:
+            fleet_distribution[fleet.destination_planet]['danger_level'] += fleet.num_ships
+    for fleet in state.my_fleets():
+        if fleet.destination_planet in targets:
+            fleet_distribution[fleet.destination_planet]['danger_level'] -= fleet.num_ships
+    for target in targets:
+        for planet in smallest_first(state):
+            if not under_attack(state, planet):
+                ships = planet.num_ships
+                if ships < 50: continue
+                danger_level = fleet_distribution[target.ID]['danger_level'] + target.num_ships + target.growth_rate * state.distance(target.ID, planet.ID) + 1
+                reenforcements = min (ships, danger_level)
+                if reenforcements > 0:
+                    issue_order(state, planet.ID, target.ID, reenforcements)
+                    fleet_distribution[target.ID]['danger_level'] -= reenforcements
+    return True
 
 def smallest_first(state):
-	return sorted(state.my_planets(), key = lambda p: p.growth_rate)
-	
+    return sorted(state.my_planets(), key = lambda p: p.growth_rate)
+    
 def under_attack(state, planet):
-	for fleet in state.enemy_fleets():
-		if fleet.destination_planet == planet.ID:
-			return True
-	return False
+    for fleet in state.enemy_fleets():
+        if fleet.destination_planet == planet.ID:
+            return True
+    return False

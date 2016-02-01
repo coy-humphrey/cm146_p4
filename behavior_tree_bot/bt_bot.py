@@ -31,17 +31,37 @@ except:
 def setup_behavior_tree():
     # Top-down construction of behavior tree
     root = Selector(name='High Level Ordering of Strategies')
+    
+    snipe_if_possible = Selector(name='Snipe if Possible')
+    snipeAction = Action(snipe)
+    snipe_if_possible.child_nodes = [snipeAction, Check(lambda state: True)]
 
-    turtleAction = Action(turtle)
-    snipeAction  = Action(snipe)
-    spread_action = Action(spread_to_largest_neutral_planet)
+    try_attack = Sequence(name='Try attack')
+    shouldAttack = Check(should_attack)
     attack = Action(attack_largest_enemies)
-    largest_fleet_check = Check(have_largest_fleet)
+    try_attack.child_nodes = [shouldAttack, attack]
+
+    defensive_plan = Sequence(name='Defensive Strategy')
+    turtleAction = Action(turtle)
+    should_play_defensive = Check(play_defensive)
+    attackLargest = Action (attack_largest_enemy)
+    enemyHasPlanet = Check(enemy_has_planets)
+    defensive_offense = Selector(name='Defensive Offense')
+    all_out_offense = Sequence(name='Allout')
+    winning = Check(significant_lead)
+    all_out_offense.child_nodes = [winning, attack.copy()]
+    defensive_offense.child_nodes = [all_out_offense, attackLargest]
+    defensive_plan.child_nodes = [should_play_defensive, snipe_if_possible, turtleAction, enemyHasPlanet, defensive_offense]
 
     offensive_plan = Sequence(name='Offensive Strategy')
-    offensive_plan.child_nodes = [snipeAction, attack]
+    offensive_plan.child_nodes = [snipe_if_possible, try_attack]
 
-    root.child_nodes = [offensive_plan, attack]
+    spread_plan = Sequence(name='Spread strategy')
+    shouldSpread = Check(should_spread)
+    spread = Action(spread_to_large_close_planets)
+    spread_plan.child_nodes = [shouldSpread, snipe_if_possible, spread]
+
+    root.child_nodes = [spread_plan, defensive_plan, offensive_plan, Check(lambda state: True)]
 
     logging.info('\n' + root.tree_to_string())
     return root
