@@ -36,33 +36,52 @@ def setup_behavior_tree():
     snipeAction = Action(snipe)
     snipe_if_possible.child_nodes = [snipeAction, Check(lambda state: True)]
 
+    move_up_if_possible = Selector(name='Move up if possible')
+    moveAction = Action(move_up)
+    move_up_if_possible.child_nodes = [moveAction, Check(lambda state: True)]
+
     try_attack = Sequence(name='Try attack')
     shouldAttack = Check(should_attack)
     attack = Action(attack_largest_enemies)
     try_attack.child_nodes = [shouldAttack, attack]
 
+    aggressive_if_possible = Selector(name='AggressiveSnipe if possible')
+    aggressiveSnipe = Action(aggressive_snipe)
+    aggressive_if_possible.child_nodes = [aggressiveSnipe, Check(lambda state: True)]
+
+    spread_if_possible = Selector(name='Spread if Possible')
+    try_spread_closest = Sequence(name='Try Spread')
+    spread_closest = Action(spread_to_closest)
+    neutral_available = Check(if_neutral_planet_available)
+    try_spread_closest.child_nodes = [neutral_available, spread_closest]
+    spread_if_possible.child_nodes = [try_spread_closest, Check (lambda state: True)]
+
     defensive_plan = Sequence(name='Defensive Strategy')
     turtleAction = Action(turtle)
     should_play_defensive = Check(play_defensive)
-    attackLargest = Action (attack_largest_enemy)
+    attackClosest = Action (attack_closest_enemy)
     enemyHasPlanet = Check(enemy_has_planets)
     defensive_offense = Selector(name='Defensive Offense')
     all_out_offense = Sequence(name='Allout')
     winning = Check(significant_lead)
     all_out_offense.child_nodes = [winning, attack.copy()]
-    defensive_offense.child_nodes = [all_out_offense, attackLargest]
+    defensive_offense.child_nodes = [all_out_offense, attackClosest]
    
-    defensive_plan.child_nodes = [should_play_defensive, snipe_if_possible, turtleAction, enemyHasPlanet, defensive_offense]
+    defensive_plan.child_nodes = [should_play_defensive, snipe_if_possible, turtleAction, move_up_if_possible, enemyHasPlanet, defensive_offense]
 
     offensive_plan = Sequence(name='Offensive Strategy')
-    offensive_plan.child_nodes = [snipe_if_possible, try_attack]
+    offensive_plan.child_nodes = [snipe_if_possible, try_attack, move_up_if_possible]
 
     spread_plan = Sequence(name='Spread strategy')
     shouldSpread = Check(should_spread)
-    spread = Action(spread_to_large_close_planets)
-    spread_plan.child_nodes = [shouldSpread, snipe_if_possible, spread]
+    spread = Action(spread_to_small_close_planets)
+    spread_plan.child_nodes = [shouldSpread, snipe_if_possible, aggressive_if_possible, spread, move_up_if_possible]
 
-    root.child_nodes = [spread_plan, defensive_plan, offensive_plan, Check(lambda state: True)]
+    close_start_plan = Sequence(name='Close start strategy')
+    is_close_start = Check (close_start)
+    close_start_plan.child_nodes = [is_close_start, snipe_if_possible, aggressive_if_possible, attack.copy()]
+
+    root.child_nodes = [close_start_plan, spread_plan, defensive_plan, offensive_plan, Check(lambda state: True)]
 
     logging.info('\n' + root.tree_to_string())
     return root

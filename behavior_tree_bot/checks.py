@@ -29,3 +29,10 @@ def significant_lead(state):
     myfleet = sum(planet.num_ships for planet in state.my_planets()) + sum(fleet.num_ships for fleet in state.my_fleets())
     theirfleet = sum(planet.num_ships for planet in state.enemy_planets()) + sum(fleet.num_ships for fleet in state.enemy_fleets())
     return myfleet > theirfleet * 1.5
+
+def close_start(state):
+    mine = len(state.my_planets())
+    theirs = len(state.my_planets())
+    if not mine or not theirs: return False
+    if mine < 2 and theirs < 2:
+        return state.distance(state.my_planets()[0].ID, state.enemy_planets()[0].ID) < 11
