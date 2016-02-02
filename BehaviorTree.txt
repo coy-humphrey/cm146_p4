@@ -1,0 +1,48 @@
+Selector: High Level Ordering of Strategies
+| Sequence: Close start strategy
+| | Check: close_start
+| | Selector: Snipe if Possible
+| | | Action: snipe
+| | | Check: <lambda>
+| | Selector: AggressiveSnipe if possible
+| | | Action: aggressive_snipe
+| | | Check: <lambda>
+| | Action: attack_largest_enemies
+| Sequence: Spread strategy
+| | Check: should_spread
+| | Selector: Snipe if Possible
+| | | Action: snipe
+| | | Check: <lambda>
+| | Selector: AggressiveSnipe if possible
+| | | Action: aggressive_snipe
+| | | Check: <lambda>
+| | Action: spread_to_small_close_planets
+| | Selector: Move up if possible
+| | | Action: move_up
+| | | Check: <lambda>
+| Sequence: Defensive Strategy
+| | Check: play_defensive
+| | Selector: Snipe if Possible
+| | | Action: snipe
+| | | Check: <lambda>
+| | Action: turtle
+| | Selector: Move up if possible
+| | | Action: move_up
+| | | Check: <lambda>
+| | Check: enemy_has_planets
+| | Selector: Defensive Offense
+| | | Sequence: Allout
+| | | | Check: significant_lead
+| | | | Action: attack_largest_enemies
+| | | Action: attack_closest_enemy
+| Sequence: Offensive Strategy
+| | Selector: Snipe if Possible
+| | | Action: snipe
+| | | Check: <lambda>
+| | Sequence: Try attack
+| | | Check: should_attack
+| | | Action: attack_largest_enemies
+| | Selector: Move up if possible
+| | | Action: move_up
+| | | Check: <lambda>
+| Check: <lambda>
